@@ -60,7 +60,7 @@ export const verifyOtp = async(req, res)=>{
        // generate token 
        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "9d" });
        console.log("Generated Token:", token); // Debugging Log
-       user._doc.token = token; // insert it with user.doc
+       user._doc.token = token; // insert it with user.document to show in postman for certain time it does not save it in db ok
 
 
         const cmpHashOtp = await bcrypt.compare(otp, user.otp)
