@@ -32,6 +32,10 @@ const userSchema = new mongoose.Schema(
             default:"USER",
             trim:true
         },
+        referralCode:{
+            type:String,
+            default:null
+        },
         disable:{
             type:Boolean,
             default:false

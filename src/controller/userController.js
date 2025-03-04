@@ -1,17 +1,13 @@
 import userModel from "../models/userModel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url"; 
 import {deleteFileMulter } from "../middleware/multer.js"
+import { generateOtp, generateReferralCode } from "../helpers/generateRandomOTPorReferral.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 // login
 export const login = async (req,res)=>{
     const {name, mobile} = req.body;
-      const otp = "1234";
+      const otp = generateOtp();
       console.log(otp);
     try{
         const hashOtp = await bcrypt.hash(otp.toString(), 10);
@@ -60,7 +56,9 @@ export const verifyOtp = async(req, res)=>{
        console.log("Generated Token:", token); // Debugging Log
        user._doc.token = token; // insert it with user.document to show in postman for certain time it does not save it in db ok
 
-
+      // adding a referral code 
+      user.referralCode = generateReferralCode();
+      await user.save();
         const cmpHashOtp = await bcrypt.compare(otp, user.otp)
           if(cmpHashOtp){
             res.status(201).json({
@@ -85,7 +83,7 @@ export const verifyOtp = async(req, res)=>{
 }
 
 // ✅ Move from "controller/" to "middleware/uploads/"
-const UPLOADS_DIR = path.join(__dirname, "../middleware/uploads");
+// const UPLOADS_DIR = path.join(__dirname, "../middleware/uploads");
 
 
 // update user by id
