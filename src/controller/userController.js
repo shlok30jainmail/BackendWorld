@@ -1,8 +1,13 @@
 import userModel from "../models/userModel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url"; 
+import {deleteFileMulter } from "../middleware/multer.js"
 
-
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 // login
 export const login = async (req,res)=>{
     const {name, mobile} = req.body;
@@ -11,21 +16,14 @@ export const login = async (req,res)=>{
     try{
         const hashOtp = await bcrypt.hash(otp.toString(), 10);
         console.log(hashOtp);
-        const data = await userModel.find({mobile}); // use findOne kyuki ek hi honga
-       if(!data){
-        const user =  new userModel({  // don't use await here - due to async behaviour of js we get error
+
+        const user =  await userModel.findOneAndUpdate({mobile},{  // don't use await here - due to async behaviour of js we get error
             name,
             mobile,
             otp:hashOtp
-        })
-        await user.save();
-       }else{
-        const user =  await userModel.findOneAndUpdate({  // don't use await here - due to async behaviour of js we get error
-            name,
-            mobile,
-            otp:hashOtp
-        })
-       }
+        },
+        { new: true, upsert: true }  // ✅ Return updated document & create if not found
+    )
 
     // 🔍 Fetch the saved user to verify OTP is hashed
         const savedUser = await userModel.findOne({ mobile });
@@ -85,4 +83,106 @@ export const verifyOtp = async(req, res)=>{
         })
     }
 }
+
+// ✅ Move from "controller/" to "middleware/uploads/"
+const UPLOADS_DIR = path.join(__dirname, "../middleware/uploads");
+
+
+// update user by id
+export const updateUser = async(req,res)=>{
+    const {userId} = req.query;
+    const {name,email,mobile, password} = req.body;
+    const img = req.file ? req.file.filename : undefined; // Get file name if uploaded
+
+ try{
+    //  // 🔍 Find user to get old image
+     const userData = await userModel.findOne({ _id: userId });
+     if (!userData) {
+         return res.status(404).json({
+             success: false,
+             message: "User not found",
+         });
+     }
+
+    const updateData = { name, email, mobile, password };
+    if (img){
+        deleteFileMulter(img,userData.img); // first unlink file that is stored in db
+        updateData.img = img; // Only update img if a new file is uploaded
+    } 
+    const user = await userModel.findOneAndUpdate(
+        {_id:userId}, 
+        // {name,email,mobile, password, img},
+        updateData,
+        { new: true } // return updated one not old one
+    );
+    res.status(201).json({
+        success:true,
+        data:user
+    })
+ }catch(error){
+       res.status(501).json({
+        success:false,
+        message:error.message
+       })
+ }
+}
+
+// get user by id
+export const userGetById = async(req,res)=>{
+    const {userId} = req.query;
+  try{
+    const user = await userModel.findOne({_id:userId});
+    if(!user){
+        res.status(404).json({
+            success:false,
+            message: "User not found !"
+        })
+    }
+    res.status(201).json({
+        success:true,
+        data: user
+    })
+
+  }catch(error){
+     res.status(501).json({
+        success:false,
+        message:error.message
+     })
+  }   
+}
+
+// get all user using filter
+export const getAllUser = async(req,res)=>{
+    const {search, mobile, page =1, limit=10, sort=-1, disable} = req.query;
+     const skip = (page -1)*limit;
+
+    const query = {
+        // ...(search && { name: new RegExp(search, "i") }), // when we use one field only
+        ...(search && {                // when we use multiple fields using one searcg
+            $or:[
+                {name: new RegExp(search, "i")},
+                { email: new RegExp(search, "i")}
+            ]
+        }),
+
+        // ...(search && { mobile: new RegExp(search, "i") }),
+        ...(mobile && {mobile}),
+        ...(disable && {disable})
+
+      };
+    try{
+       const user = await userModel.find(query).skip(skip);
+       res.status(201).json({
+        success:true,
+        data:user
+       })
+    }catch(error){
+       res.status(501).json({
+        success:false,
+        message:error.message
+       })
+    }
+}
+
+
 

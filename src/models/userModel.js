@@ -7,6 +7,10 @@ const userSchema = new mongoose.Schema(
             type:String,
             trim:true
         },
+        img:{
+            type:String,
+            trim:true
+        },
         email:{
             type:String,
             trim:true
@@ -20,7 +24,17 @@ const userSchema = new mongoose.Schema(
             trim:true
         },
         otp:{
+            type:String, // don't use trim ok here
+        },
+        userType:{
             type:String,
+            enum: ["ADMIN", "USER", "SUBADMIN"],
+            default:"USER",
+            trim:true
+        },
+        disable:{
+            type:Boolean,
+            default:false
         }
 
     },

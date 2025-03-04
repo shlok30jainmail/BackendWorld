@@ -6,7 +6,7 @@ const app = express();
 app.use(express.json());
 // Middleware for parsing JSON bodies
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true })); // for form  data from postman or client side
 // app.use(cookieParser());
 app.use("/api", userRoute);
 
