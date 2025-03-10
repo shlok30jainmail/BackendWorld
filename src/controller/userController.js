@@ -177,9 +177,18 @@ export const userGetById = async(req,res)=>{
 
 // get all user using filter - for admin
 export const getAllUser = async(req,res)=>{
-    const {search, mobile, page =1, limit=10, sort=-1, disable} = req.query;
-     const skip = (page -1)*limit;
+    const {search, mobile, page =1, limit=10,  disable} = req.query;
+    let {sort} = req.query; // const will give error when we change it
 
+    // sort by -1 or 1
+    var ssort;
+    if(sort ==-1) ssort =-1;
+    else ssort = 1;
+   
+    // skip 
+    const skip = (page -1)*limit;
+    // date filter use 
+    let dateFilter = req.uri ; // use a middleware and add it in route
     const query = {
         // ...(search && { name: new RegExp(search, "i") }), // when we use one field only
         ...(search && {                // when we use multiple fields using one searcg
@@ -191,14 +200,19 @@ export const getAllUser = async(req,res)=>{
 
         // ...(search && { mobile: new RegExp(search, "i") }),
         ...(mobile && {mobile}),
-        ...(disable && {disable})
+        ...(disable && {disable}),
+        ...dateFilter,
 
       };
+
     try{
-       const user = await userModel.find(query).skip(skip);
+       const user = await userModel.find(query).sort({createdAt:ssort}).skip(skip).limit(limit);
+       const total = await userModel.countDocuments(query);
        res.status(201).json({
         success:true,
-        data:user
+        data:user,
+        currentPage:page,
+        totalPage: Math.ceil(total/limit)
        })
     }catch(error){
        res.status(501).json({
@@ -214,7 +228,7 @@ export const disableUser = async(req,res)=>{
     const {userId} = req.query;
     try{
         const user  = await userModel.findById(userId);
-        const data = await userModel.findOneAndUpdate({userId}, {disable: !user.disable}, {new:true});
+        const data = await userModel.findOneAndUpdate({_id:userId}, {disable: !user.disable}, {new:true});
 
      res.status(200).json({
         success:true,
