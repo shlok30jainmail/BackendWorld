@@ -1,12 +1,14 @@
 import userModel from "../models/userModel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"
+import nodemailer from "nodemailer";
+
 import {deleteFileMulter } from "../middleware/multer.js"
 import { generateOtp, generateReferralCode } from "../helpers/generateRandomOTPorReferral.js";
 
 // login
 export const login = async (req,res)=>{
-    const {name, mobile} = req.body;
+    const {name, mobile, email} = req.body;
       const otp = generateOtp();
       console.log(otp);
     try{
@@ -16,6 +18,7 @@ export const login = async (req,res)=>{
         const user =  await userModel.findOneAndUpdate({mobile},{  // don't use await here - due to async behaviour of js we get error
             name,
             mobile,
+            email,
             otp:hashOtp
         },
         { new: true, upsert: true }  // ✅ Return updated document & create if not found
@@ -24,9 +27,32 @@ export const login = async (req,res)=>{
     // 🔍 Fetch the saved user to verify OTP is hashed
         const savedUser = await userModel.findOne({ mobile });
         console.log("Stored OTP in DB:", savedUser.otp);
+     console.log("email : ", email)
+      if(email != undefined){
+              // nodmailer
+    // 3️⃣ Send Email with Invoice PDF Attachment
+    const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: "shlok30jain@gmail.com",
+          pass: process.env.MAIL_PASS,
+        },
+      });
+      const mailOptions = {
+        from: "shlok30jain@gmail.com",
+      //   to: recipientEmail,
+        to: "shlok24cs114@satiengg.in",
+        subject: "Your OTP",
+        text: `Your OTP :${otp} and Don't share it with other`,
+      };
+  
+      await transporter.sendMail(mailOptions);
+      }
+
         res.status(200).json({
             success:true,
             data: "Your otp is : "+ otp,
+            message: email !==undefined ?"OTP successfully sent on your gmail": "OTP successfully sent on your mobile"
         })
        
     }catch(error){
@@ -149,7 +175,7 @@ export const userGetById = async(req,res)=>{
   }   
 }
 
-// get all user using filter
+// get all user using filter - for admin
 export const getAllUser = async(req,res)=>{
     const {search, mobile, page =1, limit=10, sort=-1, disable} = req.query;
      const skip = (page -1)*limit;
@@ -182,5 +208,24 @@ export const getAllUser = async(req,res)=>{
     }
 }
 
+
+// disable user  - For Admin
+export const disableUser = async(req,res)=>{
+    const {userId} = req.query;
+    try{
+        const user  = await userModel.findById(userId);
+        const data = await userModel.findOneAndUpdate({userId}, {disable: !user.disable}, {new:true});
+
+     res.status(200).json({
+        success:true,
+        message: user.disable === true ? "User is disabled successfully":"User is enabled successfully"
+     })
+    }catch(error){
+        res.status(500).json({
+            success:false,
+            message:error.message
+        })
+    }
+}
 
 
