@@ -33,8 +33,9 @@ export const login = async (req,res)=>{
             })
         }
 
-        await userModel.create({mobile,email, name});
+        await userModel.create({mobile,email, name, otp:hashOtp});
     }
+    await userModel.findOneAndUpdate({mobile}, {otp:hashOtp});
 
     // 🔍 Fetch the saved user to verify OTP is hashed
     //  const savedUser = await userModel.findOne({ mobile });

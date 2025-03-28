@@ -5,11 +5,19 @@ import subscriptionModel from "../models/subscriptionModel.js";
 export const createSubscription = async(req,res)=>{
     const {subscriber, channel} = req.body;
     try{
-       const data = await subscriptionModel.create({subscriber, channel});
+        const chk = await subscriptionModel.findOne({subscriber, channel})
+        console.log("chk is", chk);
+        if(!chk){
+            const data = await subscriptionModel.create({subscriber, channel});
+            return res.status(200).json({
+                success:true,
+                message:"Create Subscription Successfully",
+                data:data
+               })
+        }
        res.status(200).json({
         success:true,
-        message:"Create Subscription Successfully",
-        data:data
+        message:"You are a subscribed user of this channel",
        })
     }catch(error){
         res.status(500).json({
@@ -57,7 +65,7 @@ export const getSubscriberData = async(req,res)=>{
         const data = await subscriptionModel.aggregate([
             {
             $match:{
-                subscriber:channelId
+                channel:channelId
             }
         }, 
         {
