@@ -15,18 +15,30 @@ export const login = async (req,res)=>{
         const hashOtp = await bcrypt.hash(otp.toString(), 10);
         console.log(hashOtp);
 
-        const user =  await userModel.findOneAndUpdate({mobile},{  // don't use await here - due to async behaviour of js we get error
-            name,
-            mobile,
-            email,
-            otp:hashOtp
-        },
-        { new: true, upsert: true }  // ✅ Return updated document & create if not found
-    )
+    //     const user =  await userModel.findOneAndUpdate({mobile},{  // don't use await here - due to async behaviour of js we get error
+    //         name,
+    //         mobile,
+    //         email,
+    //         otp:hashOtp
+    //     },
+    //     { new: true, upsert: true }  // ✅ Return updated document & create if not found
+    // )
+
+    const user = await userModel.findOne({mobile});
+    if(!user){
+        if(!name  || !email){
+            return res.status(500).json({
+                success:false,
+                message:"You are new candidate so we need your name and email also to register you !"
+            })
+        }
+
+        await userModel.create({mobile,email, name});
+    }
 
     // 🔍 Fetch the saved user to verify OTP is hashed
-        const savedUser = await userModel.findOne({ mobile });
-        console.log("Stored OTP in DB:", savedUser.otp);
+    //  const savedUser = await userModel.findOne({ mobile });
+        // console.log("Stored OTP in DB:", savedUser.otp);
      console.log("email : ", email)
       if(email != undefined){
               // nodmailer
@@ -45,6 +57,7 @@ export const login = async (req,res)=>{
         subject: "Your OTP",
         text: `Your OTP :${otp} and Don't share it with other`,
       };
+
   
       await transporter.sendMail(mailOptions);
       }
@@ -130,8 +143,8 @@ export const updateUser = async(req,res)=>{
 
     const updateData = { name, email, mobile, password };
     if (img){
-        deleteFileMulter(img,userData.img); // first unlink file that is stored in db
-        updateData.img = img; // Only update img if a new file is uploaded
+        deleteFileMulter(img,userData.img); 
+        updateData.img = img; 
     } 
     const user = await userModel.findOneAndUpdate(
         {_id:userId}, 
