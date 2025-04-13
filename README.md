@@ -14,7 +14,7 @@ This repository is a **comprehensive template** for backend applications built w
 - 📬 Email notifications for OTP and invoices
 
 ## 📁 Project Structure
-
+The project follows the **MVCR architecture** — **Model, View, Controller, Routes**, making the codebase clean, modular, and scalable.
 
 > Clean and scalable project architecture
 
