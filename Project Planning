@@ -1,0 +1,17 @@
+1. Subscription plan 
+2. AI chatting functionalities
+3. Private Chatting using thread
+4. Comment and their repsone 
+5. Event creation and remove after the time from the Database
+6. Subscription Functionality
+7. User and admin section
+8. Date Filter
+9. Plan middleware to check you have plan to do particular thing or not
+10. Otp and invoice generated function and send on mail functionality
+11. multer/ aws multer s-3 bucket use
+12. Firebase use for push notification
+
+
+core functionalities 
+-------------------------
+- process while anyone buy any plan so their plan detail invoice pdf is sent to that user on the mail
